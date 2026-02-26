@@ -49,7 +49,7 @@ async def sent_message(content):
                 )
                 return 'success'
         
-        elif media_type == 'photo':
+        elif media_type == 'image':
             from aiogram.types import InputMediaPhoto
             
             if len(media_urls) == 1:

@@ -115,7 +115,7 @@ class AsyncMaxListener:
             driver.execute_script(js_script, storage_data)
             driver.refresh()
             import time
-            time.sleep(3)
+            time.sleep(5)
             return True
         
         return await self._run_sync(_login, storage_data, self.url)
