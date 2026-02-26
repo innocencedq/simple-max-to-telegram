@@ -21,7 +21,7 @@ STORAGE_DATA_AUTH_CALLS=YOUR:__oneme_calls_auth_token:FROM:LOCAL_STORAGE
 TG_TOKEN=YOUR_TELEGRAM_TOKEN:FROM:BOTFATHER
 URL=YOUR_URL_TO_DIALOG
 CURRENT_DATAINDEX='1'
-GROUP_CHAT_ID='YOUR_CHAT_ID_TELEGRAM' (after starting a group or dm, use /whoami and paste the value)
+GROUP_CHAT_ID='YOUR_CHAT_ID_TELEGRAM' # after starting a group or dm, use /whoami and paste the value
 DELAY_REQUESTING='10'
 STATUS_REQUSTING='active'
 ```
