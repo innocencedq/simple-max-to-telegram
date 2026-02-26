@@ -67,7 +67,7 @@ mv chromedriver usr/home/simple-max-to-telegram/src/app/util
 
 ***
 
-### **4. Install reqiurements**
+### **4. Install requirements**
 
 **1. Create enviroment:**
 ```
