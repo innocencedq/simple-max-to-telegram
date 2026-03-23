@@ -15,6 +15,7 @@ class Config:
         self.GROUP_CHAT_ID = os.getenv('GROUP_CHAT_ID')
         self.DELAY_REQUESTING = os.getenv('DELAY_REQUESTING')
         self.STATUS_REQUSTING = os.getenv('STATUS_REQUSTING')
+        self.TRACKER_DEVICE_ID = os.getenv('TRACKER_DEVICE_ID')
 
 
     
@@ -28,11 +29,12 @@ class Config:
         self.GROUP_CHAT_ID = os.getenv('GROUP_CHAT_ID')
         self.DELAY_REQUESTING = os.getenv('DELAY_REQUESTING')
         self.STATUS_REQUSTING = os.getenv('STATUS_REQUSTING')
-
+        self.TRACKER_DEVICE_ID = os.getenv('TRACKER_DEVICE_ID')
+        
 config = Config()
 
 def update_env(key, new_value):
     set_key(env_path, key, new_value)
     config.refresh()
     
-    print(f"✅ {key} = {getattr(config, key)}")
+    print(f"| Successful edited, now: {key} = {getattr(config, key)}")

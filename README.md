@@ -18,6 +18,7 @@ git clone https://github.com/innocencedq/simple-max-to-telegram.git
 ```
 STORAGE_DATA_AUTH=YOUR:__oneme_auth:FROM:LOCAL_STORAGE
 STORAGE_DATA_AUTH_CALLS=YOUR:__oneme_calls_auth_token:FROM:LOCAL_STORAGE
+TRACKER_DEVICE_ID=YOUR:__oneme_device_id:FROM:LOCAL_STORAGE
 TG_TOKEN=YOUR_TELEGRAM_TOKEN:FROM:BOTFATHER
 URL=YOUR_URL_TO_DIALOG
 CURRENT_DATAINDEX='1'
@@ -30,11 +31,8 @@ STATUS_REQUSTING='active'
 
 ### **3. Download chromedriver**
 
-**For Windows by using python:**
-```
-pip install undetected-chromedriver
-```
-**Or from [official site](https://developer.chrome.com/docs/chromedriver/downloads)**
+**For Windows**
+[Official site](https://developer.chrome.com/docs/chromedriver/downloads)
 
 **For Linux:**
 ```

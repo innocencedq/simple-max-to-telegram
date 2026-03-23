@@ -5,13 +5,15 @@ from config import config, update_env
 import time
 from typing import Optional, Dict, Any, List
 import traceback
+from app.util.logger import logger
 
 class ContentMonitor:
-    def __init__(self):
+    def __init__(self): 
         self.url = config.URL
         self.storage_data = {
-            '__oneme_auth': config.STORAGE_DATA_AUTH,
-            '__oneme_calls_auth_token': config.STORAGE_DATA_AUTH_CALLS
+            '__oneme_auth': config.STORAGE_DATA_AUTH, # take it from local storage
+            '__oneme_calls_auth_token': config.STORAGE_DATA_AUTH_CALLS, # take it from local storage
+            '__oneme_device_id': config.TRACKER_DEVICE_ID # take it from local storage
         }
         
         self.last_check_time = time.time()
@@ -28,6 +30,7 @@ class ContentMonitor:
         self.is_monitoring = False
         self.monitor_task: Optional[asyncio.Task] = None
         self.initial_load_done = False
+        self.last_scroll_time = 0
         
     async def update_message_cache(self, content: Dict[str, Any]):
         async with self.messages_lock:
@@ -86,22 +89,41 @@ class ContentMonitor:
                 if idx > since_index
             ]
     
+    async def perform_polling_scroll(self, listener):
+        current_time = time.time()
+        delay_seconds = float(config.DELAY_REQUESTING) if config.DELAY_REQUESTING else 1
+        
+        if current_time - self.last_scroll_time >= delay_seconds:
+            await logger.info(f"| Performing polling scroll (interval: {delay_seconds}s)")
+            await listener.perform_scroll()
+            self.last_scroll_time = current_time
+            return True
+        return False
+    
     async def check_for_new_content(self, listener, current_dataindex):
         try:
+            await self.perform_polling_scroll(listener)
+            
             main_element = await listener.find_main_element()
             if not main_element:
+                await logger.info("| Main element not found, maybe you should update tokens...")
                 return None
+            
+            await logger.info("| Main element found!")
                 
             scroll_elements = await listener.find_scroll_content_in_main(main_element)
             if not scroll_elements:
+                await logger.info("| Scroll element not found, trying again...")
                 return None
                 
             data_index_elements = await listener.find_elements_with_data_index(scroll_elements)
             if not data_index_elements:
+                await logger.info("| Data index not found, trying again...")
                 return None
                 
             all_indices = await listener.get_all_data_indices(data_index_elements)
             if not all_indices:
+                await logger.info("| All indices not found, trying again...")
                 return None
             
             for index in all_indices:
@@ -151,6 +173,7 @@ class ContentMonitor:
                         current_dataindex = 0
                     
                     self.max_known_index = max(self.max_known_index, current_dataindex)
+                    self.last_scroll_time = time.time()
                     
                     if not self.initial_load_done:
                         await self.load_all_existing_content(listener)
@@ -227,7 +250,7 @@ async def everytime_cheker():
 async def get_last_message():
     await start_monitoring()
     
-    for i in range(10):
+    for _ in range(10):
         if monitor.initial_load_done:
             break
         await asyncio.sleep(1)
@@ -254,7 +277,7 @@ async def get_last_message():
 async def forced_message():
     await start_monitoring()
     
-    for i in range(10):
+    for _ in range(10):
         if monitor.initial_load_done:
             break
         await asyncio.sleep(1)

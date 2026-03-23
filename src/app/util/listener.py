@@ -6,6 +6,8 @@ from selenium.common.exceptions import TimeoutException, NoSuchElementException
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from typing import Optional, List
+from app.util.logger import logger
+
 
 class AsyncMaxListener:
     _driver_pool: List[dict] = []
@@ -40,7 +42,7 @@ class AsyncMaxListener:
             
             loop = asyncio.get_event_loop()
             
-            def _create_driver():
+            def _create_driver(): # driver settings configured for use on the server
                 options = webdriver.ChromeOptions()
                 if cls._max_drivers > 1:
                     options.add_argument('--headless')
@@ -61,7 +63,7 @@ class AsyncMaxListener:
             tasks = [loop.run_in_executor(cls._executor, _create_driver) for _ in range(cls._max_drivers)]
             cls._driver_pool = await asyncio.gather(*tasks)
             cls._pool_initialized = True
-            print(f"Pull drivers init: {cls._max_drivers} drivers")
+            await logger.info(f"| Pull drivers init: {cls._max_drivers} drivers")
     
     @classmethod
     async def _acquire_driver(cls):
@@ -69,23 +71,23 @@ class AsyncMaxListener:
             for driver_info in cls._driver_pool:
                 if not driver_info['in_use']:
                     driver_info['in_use'] = True
-                    print(f"Driver {id(driver_info['driver'])} got")
+                    await logger.info(f"| Driver {id(driver_info['driver'])} got")
                     return driver_info
             
-            print("All drivers are busy, waiting...")
+            await logger.info("| All drivers are busy, waiting...")
             while True:
                 await asyncio.sleep(0.5)
                 for driver_info in cls._driver_pool:
                     if not driver_info['in_use']:
                         driver_info['in_use'] = True
-                        print(f"Free driver {id(driver_info['driver'])} got")
+                        await logger.info(f"| Free driver {id(driver_info['driver'])} got")
                         return driver_info
     
     @classmethod
     async def _release_driver(cls, driver_info):
         async with cls._pool_lock:
             driver_info['in_use'] = False
-            print(f"Driver {id(driver_info['driver'])} free")
+            await logger.info(f"| Driver {id(driver_info['driver'])} free")
     
     async def _run_sync(self, func, *args, **kwargs):
         if not self._driver_info:
@@ -97,6 +99,44 @@ class AsyncMaxListener:
             return func(self._driver_info['driver'], self._driver_info['wait'], *args, **kwargs)
         
         return await loop.run_in_executor(self.__class__._executor, wrapped_func)
+    
+    async def perform_scroll(self):
+        def _scroll(driver, wait):
+            try:
+                scroll_element = driver.execute_script(
+                    "return document.querySelectorAll('.scrollable.scrollListScrollable.svelte-108hfl7')"
+                )
+                
+                if scroll_element and len(scroll_element) > 0:
+                    element = scroll_element[1]
+                    
+                    scroll_height = driver.execute_script(
+                        "return arguments[0].scrollHeight", element
+                    )
+                    
+                    print(f"| Performing scroll, height: {scroll_height}")
+                    
+                    driver.execute_script(
+                        "arguments[0].scrollBy(0, -arguments[1])", element, scroll_height
+                    )
+                    import time
+                    time.sleep(0.5)
+                    
+                    driver.execute_script(
+                        "arguments[0].scrollBy(0, arguments[1])", element, scroll_height
+                    )
+                    time.sleep(0.5)
+                    
+                    return True
+                else:
+                    print("| Scroll element not found")
+                    return False
+                    
+            except Exception as e:
+                print(f"| Scroll error: {e}")
+                return False
+        
+        return await self._run_sync(_scroll)
     
     async def login_with_local_storage(self, storage_data):
         def _login(driver, wait, storage_data, url):
@@ -282,9 +322,7 @@ class AsyncMaxListener:
             'error': None
         }
         
-        try:
-            print(f"\n| Async requesting: last_data_index={last_data_index}")
-            
+        try:            
             await self.login_with_local_storage(storage_data)
             
             main_element = await self.find_main_element()
@@ -308,11 +346,8 @@ class AsyncMaxListener:
                 return result
             
             max_index = max(all_indices)
-            print(f"| Finded data-index: {all_indices}")
-            print(f"| Max data-index: {max_index}")
             
             if last_data_index is not None and max_index <= last_data_index:
-                print("| No new content")
                 result['success'] = True
                 result['data'] = {
                     'max_index': max_index,
@@ -340,11 +375,6 @@ class AsyncMaxListener:
                     'media': content['media']
                 }
             }
-            
-            print(f"| New content received: data-index={max_index}")
-            print(f"| Text: {content['text_content'][:100]}..." if len(content['text_content']) > 100 else f"| Text: {content['text_content']}")
-            print(f"| Media: {len(content['media'])}")
-            
             return result
             
         except Exception as e:
@@ -362,8 +392,6 @@ class AsyncMaxListener:
         }
         
         try:
-            print(f"\n| Search content by data-index: {target_index}")
-            
             await self.login_with_local_storage(storage_data)
             
             main_element = await self.find_main_element()
@@ -410,7 +438,7 @@ class AsyncMaxListener:
             if not cls._pool_initialized:
                 return
             
-            print("| Closing the driver pool...")
+            await logger.info("| Closing the driver pool...")
             
             def _close_driver(driver_info):
                 if driver_info['driver']:
@@ -428,4 +456,4 @@ class AsyncMaxListener:
             cls._driver_pool = []
             cls._pool_initialized = False
             cls._executor.shutdown(wait=False)
-            print("| The driver pool has closed")
+            await logger.info("| The driver pool has closed")
