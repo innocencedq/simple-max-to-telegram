@@ -1,5 +1,8 @@
 # Simple Telegram bot for forwarding messages from Max to Telegram by using Selenium
 
+<img width="384" height="730" alt="изображение" src="https://github.com/user-attachments/assets/4ded6105-3942-494b-a132-1aa1822faae4" />
+
+
 ## Required software:
 - Python 3.13 and newer
 - chromedriver 111.0.5563.64 and newer
@@ -103,6 +106,9 @@ python run.py
 ```
 pm2 start run.py --interpreter python3 --name "simple-max-to-telegram-bot"
 ```
+
+## FAQ:
+If the bot is in an error state click the FLIP STATUS button in the settings
 
 
 
